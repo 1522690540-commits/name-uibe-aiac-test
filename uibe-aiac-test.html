@@ -1484,20 +1484,20 @@
                     React.createElement('p', { className: 'text-sm opacity-80' }, m.desc)
                   ),
                   selectedModule === m.type && React.createElement('div', {
-                    className: 'absolute inset-0 bg-white/95 backdrop-blur-sm rounded-3xl z-20 flex flex-col items-center justify-center p-4 border shadow-inner animate-in zoom-in-95 duration-200'
+                    className: 'absolute inset-0 bg-white/95 backdrop-blur-sm rounded-3xl z-20 flex flex-col items-center justify-center p-3 border shadow-inner animate-in zoom-in-95 duration-200'
                   },
-                    React.createElement('h4', { className: 'font-bold text-slate-800 mb-4 text-center' }, `请选择 ${m.title} 的固定题库`),
-                    React.createElement('div', { className: 'flex flex-wrap justify-center gap-3' },
+                    React.createElement('h4', { className: 'font-bold text-slate-800 mb-3 text-center text-sm leading-tight' }, `请选择 ${m.title} 的固定题库`),
+                    React.createElement('div', { className: 'flex flex-wrap justify-center gap-2' },
                       getAvailableBanks(m.type).map(bank =>
                         React.createElement('button', {
                           key: bank,
                           onClick: () => startModuleQuiz(bank),
-                          className: 'px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-blue-100'
-                        }, `固定题库 ${bank}`)
+                          className: 'px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs transition-all shadow-md shadow-blue-100'
+                        }, `题库 ${bank}`)
                       ),
                       React.createElement('button', {
                         onClick: () => setSelectedModule(null),
-                        className: 'px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl font-bold text-sm transition-all'
+                        className: 'px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg font-bold text-xs transition-all'
                       }, '取消')
                     )
                   )
