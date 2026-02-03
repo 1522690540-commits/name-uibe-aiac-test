@@ -22,8 +22,7 @@
   "imports": {
     "react/": "https://esm.sh/react@^19.2.4/",
     "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
   }
 }
 </script>
@@ -34,73 +33,11 @@
   <script type="module">
     import React, { useState, useEffect, useMemo } from 'react';
     import ReactDOM from 'react-dom/client';
-    import { GoogleGenAI } from '@google/genai';
-
-    // ==================== GEMINI AI SERVICE ====================
-    class GeminiService {
-      /**
-       * Generates AI analysis for incorrect questions.
-       * Following @google/genai guidelines, initialize GoogleGenAI inside the method
-       * to ensure it uses the most up-to-date API key from the environment.
-       */
-      async getAiAnalysis(userName, incorrectQuestions, apiKey) {
-        if (incorrectQuestions.length === 0) {
-          return "太棒了！全部回答正确，展示了扎实的知识储备。";
-        }
-
-        if (!apiKey) {
-          return "请先配置 Gemini API Key 以使用 AI 分析功能。";
-        }
-
-        try {
-          // Initialize GoogleGenAI instance right before the call
-          const ai = new GoogleGenAI({ apiKey });
-
-          // Handle FITB questions which don't have options when generating the summary
-          const questionsSummary = incorrectQuestions.map(q => {
-            const correctAnsText = (q.type === 'MCQ' && q.options)
-              ? q.options[q.correctAnswer]
-              : q.correctAnswer;
-            return `题目: ${q.content}\n正确答案: ${correctAnsText}\n解析: ${q.explanation}`;
-          }).join('\n\n');
-
-          const prompt = `
-用户: ${userName}
-在贸大AIAC测试中，该学生在以下题目上遇到了困难：
-${questionsSummary}
-
-请作为一位专业的留学顾问和学术导师，为该学生提供：
-1. 知识薄弱点分析。
-2. 针对性的复习建议。
-3. 鼓励性的话语。
-字数控制在300字以内，语气专业且亲切。
-          `;
-
-          // Use ai.models.generateContent with both model name and prompt
-          const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-exp',
-            contents: prompt,
-          });
-
-          // Correctly access text property
-          return response.text || "AI 分析生成失败，请稍后重试。";
-        } catch (error) {
-          console.error("AI Analysis failed:", error);
-          if (error.message && error.message.includes('API key')) {
-            return "API Key 无效或已过期，请检查配置。";
-          }
-          return "无法获取AI分析，请检查网络连接或API配置。";
-        }
-      }
-    }
-
-    const geminiService = new GeminiService();
 
     // ==================== CONSTANTS ====================
     const FIXED_PASSWORD = 'UIBEAIAC';
     const STORAGE_KEY = 'UIBE_AIAC_LEADERBOARD';
     const DATE_KEY = 'UIBE_AIAC_LAST_RESET_DATE';
-    const API_KEY_STORAGE = 'UIBE_AIAC_GEMINI_API_KEY';
 
     const ModuleType = {
       UIBE: 'UIBE',
@@ -1531,37 +1468,6 @@ ${questionsSummary}
     const Dashboard = ({ onStartQuiz, leaderboard }) => {
       const [compCount, setCompCount] = useState(30);
       const [selectedModule, setSelectedModule] = useState(null);
-      const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-      const [apiKeyInput, setApiKeyInput] = useState('');
-      const [currentApiKey, setCurrentApiKey] = useState('');
-
-      useEffect(() => {
-        const savedKey = localStorage.getItem(API_KEY_STORAGE);
-        if (savedKey) {
-          setCurrentApiKey(savedKey);
-          setApiKeyInput(savedKey);
-        }
-      }, []);
-
-      const handleSaveApiKey = () => {
-        if (apiKeyInput.trim()) {
-          localStorage.setItem(API_KEY_STORAGE, apiKeyInput.trim());
-          setCurrentApiKey(apiKeyInput.trim());
-          setShowApiKeyModal(false);
-          alert('Gemini API Key 已保存！');
-        } else {
-          alert('请输入有效的 API Key');
-        }
-      };
-
-      const handleRemoveApiKey = () => {
-        if (confirm('确定要删除已保存的 API Key 吗？')) {
-          localStorage.removeItem(API_KEY_STORAGE);
-          setCurrentApiKey('');
-          setApiKeyInput('');
-          setShowApiKeyModal(false);
-        }
-      };
 
       const modules = [
         { type: 'UIBE', title: '对外经济贸易大学', desc: '了解贸大历史、校史与核心价值观', icon: '🏛️', color: 'bg-blue-50 text-blue-600 border-blue-100' },
@@ -1881,9 +1787,6 @@ ${questionsSummary}
     };
 
     const Results = ({ userName, state, onRestart }) => {
-      const [aiAnalysis, setAiAnalysis] = useState(null);
-      const [isAnalyzing, setIsAnalyzing] = useState(false);
-
       const stats = useMemo(() => {
         let correct = 0;
         const incorrect = [];
@@ -1913,23 +1816,6 @@ ${questionsSummary}
         };
       }, [state]);
 
-      const handleAiAnalysis = async () => {
-        setIsAnalyzing(true);
-        try {
-          // Get API key from localStorage
-          const apiKey = localStorage.getItem(API_KEY_STORAGE);
-
-          // Use real Gemini AI service
-          const analysis = await geminiService.getAiAnalysis(userName, stats.incorrect, apiKey);
-          setAiAnalysis(analysis);
-        } catch (error) {
-          console.error('AI Analysis error:', error);
-          setAiAnalysis('AI 分析服务暂时不可用，请稍后重试。');
-        } finally {
-          setIsAnalyzing(false);
-        }
-      };
-
       const duration = Math.round(((state.endTime || Date.now()) - state.startTime) / 1000 / 60);
 
       return React.createElement('div', { className: 'max-w-4xl mx-auto space-y-8' },
@@ -1956,30 +1842,7 @@ ${questionsSummary}
             )
           ),
           React.createElement('div', { className: 'p-8' },
-            React.createElement('div', { className: 'flex items-center justify-between mb-8' },
-              React.createElement('h3', { className: 'text-xl font-bold text-slate-800' }, '错题解析与回顾'),
-              React.createElement('button', {
-                onClick: handleAiAnalysis,
-                disabled: isAnalyzing,
-                className: 'flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors font-bold disabled:opacity-50'
-              },
-                isAnalyzing ?
-                  React.createElement('span', null, '正在生成 AI 分析...') :
-                  React.createElement(React.Fragment, null,
-                    React.createElement('svg', { width: '20', height: '20', fill: 'currentColor', viewBox: '0 0 24 24' },
-                      React.createElement('path', { d: 'M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z' })
-                    ),
-                    '获取 AI 智能分析报告'
-                  )
-              )
-            ),
-            aiAnalysis && React.createElement('div', { className: 'bg-indigo-50 border border-indigo-100 p-6 rounded-2xl mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500' },
-              React.createElement('div', { className: 'flex items-center gap-2 text-indigo-700 font-bold mb-3' },
-                React.createElement('span', { className: 'p-1 bg-indigo-600 text-white rounded-md text-xs' }, 'AI'),
-                '智能学习建议'
-              ),
-              React.createElement('p', { className: 'text-slate-700 leading-relaxed whitespace-pre-wrap' }, aiAnalysis)
-            ),
+            React.createElement('h3', { className: 'text-xl font-bold text-slate-800 mb-8' }, '错题解析与回顾'),
             React.createElement('div', { className: 'space-y-6' },
               stats.incorrect.length === 0 ?
                 React.createElement('div', { className: 'py-12 text-center text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl' },
